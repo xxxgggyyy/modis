@@ -24,6 +24,7 @@ import (
 	"github.com/oceanbase/modis/command"
 	"github.com/oceanbase/modis/connection/conncontext"
 	"github.com/oceanbase/modis/log"
+	mutil "github.com/oceanbase/modis/util"
 	"github.com/oceanbase/modis/protocol/resp"
 	respPak "github.com/oceanbase/modis/protocol/resp"
 	"github.com/oceanbase/obkv-table-client-go/obkvrpc"
@@ -57,7 +58,7 @@ func (rs *RedisCodec) ReadRequest(req *obkvrpc.Request) error {
 		return err
 	}
 	req.Method = string(args[0])
-	log.Debug("server", req.ID, "read command", log.String("name", req.Method))
+	// log.Debug("server", req.ID, "read command", log.String("name", req.Method))
 	if len(args) > 1 {
 		req.Args = args[1:]
 	}
@@ -128,8 +129,8 @@ func (rs *RedisCodec) Close() {
 
 func (rs *RedisCodec) readCommand(plainReq *[]byte) ([][]byte, error) {
 	lastReadBytes := *rs.CodecCtx.TotalBytes
-	buf, err := rs.CodecCtx.Reader.ReadBytes('\n')
-	*plainReq = append(*plainReq, buf...)
+	buf, err := mutil.ReadBytesNoClone(rs.CodecCtx.Reader, '\n', plainReq)
+	// *plainReq = append(*plainReq, buf...)
 	if err != nil {
 		log.Warn("server", nil, "fail to read bytes", log.Errors(err))
 		return nil, err

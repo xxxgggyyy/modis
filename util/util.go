@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"time"
 	"unsafe"
+  "bufio"
 
 	"github.com/oceanbase/modis/log"
 )
@@ -120,4 +121,35 @@ func GenRandomBytes(size int) ([]byte, error) {
 		rb = rb[:size]
 	}
 	return rb, nil
+}
+
+// Use bufio.ReadSlice read bytes appending to palinReq until
+// the first occurrence of delim. It returns []bytes in plainReq.
+func ReadBytesNoClone(b *bufio.Reader, delim byte, plainReq *[]byte) (ret_slice []byte, err error) {
+  var frag []byte
+  var start int = len(*plainReq)
+	for {
+    frag, err = b.ReadSlice(delim)
+		if err == nil { // no err, got final fragment
+			break
+		}
+		if err != bufio.ErrBufferFull { // unexpected error
+			break
+		}
+
+    *plainReq = append(*plainReq, frag...)
+	}
+  *plainReq = append(*plainReq, frag...)
+  return (*plainReq)[start:], err
+}
+
+func ExpandBytesSlice(org []byte, expand_len int) []byte {
+  available_len := cap(org) - len(org)
+  dst_len := len(org) + expand_len
+  if available_len >= expand_len {
+    return org[:dst_len]
+  }
+  new_bytes := make([]byte, dst_len)
+  copy(new_bytes, org)
+  return new_bytes
 }
